@@ -15,21 +15,11 @@
 <header>
     <h1>Padaria Online</h1>
     <nav>
-        <button id="show-login">Login</button>
         <button id="show-register">Cadastro</button>
         <button id="show-products">Produtos</button>
         <button id="show-cart">Carrinho (<span id="cart-count">0</span>)</button>
     </nav>
 </header>
-
-<!-- Login -->
-<section id="login-section" class="hidden">
-    <h2>Login</h2>
-    <input type="email" id="login-email" placeholder="Email">
-    <input type="password" id="login-password" placeholder="Senha">
-    <button id="login-btn">Entrar</button>
-    <p id="login-msg"></p>
-</section>
 
 <!-- Cadastro -->
 <section id="register-section" class="hidden">
@@ -46,7 +36,65 @@
 <!-- Produtos -->
 <section id="products-section" class="hidden">
     <h2>Produtos</h2>
-    <div id="products-container"></div>
+    <div id="products-container">
+        <div class="product-card">
+
+            <h3>Pão Francês</h3>
+            <p>R$ 1,50</p>
+            <button onclick="addToCart(1, 'Pão Francês', 1.50)">Adicionar</button>
+        </div>
+
+        <div class="product-card">
+
+            <h3>Pão de Queijo</h3>
+            <p>R$ 3,00</p>
+            <button onclick="addToCart(2, 'Pão de Queijo', 3.00)">Adicionar</button>
+        </div>
+
+        <div class="product-card">
+
+            <h3>Croissant</h3>
+            <p>R$ 4,50</p>
+            <button onclick="addToCart(3, 'Croissant', 4.50)">Adicionar</button>
+        </div>
+
+        <div class="product-card">
+
+            <h3>Bolo de Cenoura</h3>
+            <p>R$ 15,00</p>
+            <button onclick="addToCart(4, 'Bolo de Cenoura', 15.00)">Adicionar</button>
+        </div>
+
+        <div class="product-card">
+
+            <h3>Coxinha</h3>
+            <p>R$ 5,00</p>
+            <button onclick="addToCart(5, 'Coxinha', 5.00)">Adicionar</button>
+        </div>
+
+        <div class="product-card">
+
+            <h3>Empada</h3>
+            <p>R$ 6,00</p>
+            <button onclick="addToCart(6, 'Empada', 6.00)">Adicionar</button>
+        </div>
+
+        <div class="product-card">
+
+            <h3>Sonho Recheado</h3>
+            <p>R$ 7,50</p>
+            <button onclick="addToCart(7, 'Sonho Recheado', 7.50)">Adicionar</button>
+        </div>
+
+        <div class="product-card">
+
+            <h3>Pão Integral</h3>
+            <p>R$ 2,50</p>
+            <button onclick="addToCart(8, 'Pão Integral', 2.50)">Adicionar</button>
+        </div>
+
+
+    </div>
 </section>
 
 <!-- Carrinho -->
@@ -59,25 +107,23 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const loginSection = document.getElementById('login-section');
         const registerSection = document.getElementById('register-section');
         const productsSection = document.getElementById('products-section');
         const cartSection = document.getElementById('cart-section');
 
         function showSection(section) {
-            [loginSection, registerSection, productsSection, cartSection].forEach(s => s.classList.add('hidden'));
-            if(section === 'login') loginSection.classList.remove('hidden');
+            [registerSection, productsSection, cartSection].forEach(s => s.classList.add('hidden'));
             if(section === 'register') registerSection.classList.remove('hidden');
             if(section === 'products') productsSection.classList.remove('hidden');
             if(section === 'cart') cartSection.classList.remove('hidden');
         }
 
         // Navegação
-        document.getElementById('show-login').addEventListener('click', () => showSection('login'));
         document.getElementById('show-register').addEventListener('click', () => showSection('register'));
         document.getElementById('show-products').addEventListener('click', () => showSection('products'));
         document.getElementById('show-cart').addEventListener('click', () => showSection('cart'));
 
+        // Carrinho
         let cart = [];
 
         function updateCart() {
@@ -119,41 +165,18 @@
             const email = document.getElementById('register-email').value;
             const senha = document.getElementById('register-password').value;
 
-            fetch('http://localhost:8080/usuarios', {
+            fetch('http://localhost:8080/usuario', {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({nome,email,senha,cpf,dataNasc})
+                body: JSON.stringify({nome, cpf, dataNasc, email, senha})
             })
                 .then(res => res.json())
                 .then(() => {
                     document.getElementById('register-msg').textContent = 'Cadastro realizado!';
-                    showSection('login');
+                    showSection('products');
                 })
                 .catch(err => {
                     document.getElementById('register-msg').textContent = 'Erro no cadastro!';
-                    console.error(err);
-                });
-        });
-
-        // Login
-        document.getElementById('login-btn').addEventListener('click', () => {
-            const email = document.getElementById('login-email').value;
-            const senha = document.getElementById('login-password').value;
-
-            fetch('http://localhost:8080/usuarios/login',{
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({email,senha})
-            })
-                .then(res => res.json())
-                .then(user => {
-                    localStorage.setItem('currentUser', JSON.stringify(user));
-                    document.getElementById('login-msg').textContent = 'Login realizado!';
-                    showSection('products');
-                    loadProducts();
-                })
-                .catch(err => {
-                    document.getElementById('login-msg').textContent = 'Email ou senha incorretos!';
                     console.error(err);
                 });
         });
@@ -170,16 +193,18 @@
                         const card = document.createElement('div');
                         card.className = 'product-card';
                         card.innerHTML = `
-                    <img src="${p.img}" alt="${p.nome}" style="width:100px;height:100px;">
-                    <h3>${p.nome}</h3>
-                    <p>R$ ${p.preco.toFixed(2)}</p>
-                    <button onclick="addToCart(${p.id}, '${p.nome}', ${p.preco})">Adicionar</button>
-                `;
+                        <img src="${p.img}" alt="${p.nome}" style="width:100px;height:100px;">
+                        <h3>${p.nome}</h3>
+                        <p>R$ ${p.preco.toFixed(2)}</p>
+                        <button onclick="addToCart(${p.id}, '${p.nome}', ${p.preco})">Adicionar</button>
+                    `;
                         productsContainer.appendChild(card);
                     });
                 })
                 .catch(err => console.error(err));
         }
+
+        loadProducts();
 
         // Checkout WhatsApp
         document.getElementById('checkout-btn').addEventListener('click', () => {
@@ -187,7 +212,7 @@
             let message = 'Olá, quero comprar:%0A';
             cart.forEach(item => message += `${item.nome} x${item.qtd} - R$ ${(item.preco*item.qtd).toFixed(2)}%0A`);
             message += `Total: R$ ${cart.reduce((acc,i)=>acc+i.preco*i.qtd,0).toFixed(2)}`;
-            const phone = '5511999999999'; // seu número
+            const phone = '5511999999999'; // Coloque seu número
             window.open(`https://wa.me/${phone}?text=${message}`,'_blank');
         });
 
