@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 
 import lombok.*;
 
+import java.time.LocalDate;
+
 
 @Getter
 @Setter
@@ -24,7 +26,8 @@ public class Usuario {
     private String telefone;
     @Column(name = "Cpf",unique = true)
     private String cpf;
-  @Email(message = "Formato de e-mail inválido")
     @Column(name = "Email")
     private String email;
+    @Column(name ="Data de nascimento")
+    private LocalDate data;
 }

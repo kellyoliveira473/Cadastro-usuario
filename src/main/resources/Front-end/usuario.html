@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padaria Online</title>
+    <link rel="stylesheet" href="usuario.css">
+    <style>
+        .hidden { display: none; }
+        .product-card { border: 1px solid #ccc; padding: 10px; margin: 10px; display:inline-block; width:150px; }
+        .cart-item { border-bottom: 1px solid #ccc; padding:5px 0; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Padaria Online</h1>
+    <nav>
+        <button id="show-login">Login</button>
+        <button id="show-register">Cadastro</button>
+        <button id="show-products">Produtos</button>
+        <button id="show-cart">Carrinho (<span id="cart-count">0</span>)</button>
+    </nav>
+</header>
+
+<!-- Login -->
+<section id="login-section" class="hidden">
+    <h2>Login</h2>
+    <input type="email" id="login-email" placeholder="Email">
+    <input type="password" id="login-password" placeholder="Senha">
+    <button id="login-btn">Entrar</button>
+    <p id="login-msg"></p>
+</section>
+
+<!-- Cadastro -->
+<section id="register-section" class="hidden">
+    <h2>Cadastro</h2>
+    <input type="text" id="register-name" placeholder="Nome">
+    <input type="text" id="register-cpf" placeholder="CPF">
+    <input type="date" id="register-data" placeholder="Data de nascimento">
+    <input type="email" id="register-email" placeholder="Email">
+    <input type="password" id="register-password" placeholder="Senha">
+    <button id="register-btn">Cadastrar</button>
+    <p id="register-msg"></p>
+</section>
+
+<!-- Produtos -->
+<section id="products-section" class="hidden">
+    <h2>Produtos</h2>
+    <div id="products-container"></div>
+</section>
+
+<!-- Carrinho -->
+<section id="cart-section" class="hidden">
+    <h2>Carrinho</h2>
+    <div id="cart-container"></div>
+    <p>Total: R$ <span id="cart-total">0</span></p>
+    <button id="checkout-btn">Finalizar Compra via WhatsApp</button>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginSection = document.getElementById('login-section');
+        const registerSection = document.getElementById('register-section');
+        const productsSection = document.getElementById('products-section');
+        const cartSection = document.getElementById('cart-section');
+
+        function showSection(section) {
+            [loginSection, registerSection, productsSection, cartSection].forEach(s => s.classList.add('hidden'));
+            if(section === 'login') loginSection.classList.remove('hidden');
+            if(section === 'register') registerSection.classList.remove('hidden');
+            if(section === 'products') productsSection.classList.remove('hidden');
+            if(section === 'cart') cartSection.classList.remove('hidden');
+        }
+
+        // Navegação
+        document.getElementById('show-login').addEventListener('click', () => showSection('login'));
+        document.getElementById('show-register').addEventListener('click', () => showSection('register'));
+        document.getElementById('show-products').addEventListener('click', () => showSection('products'));
+        document.getElementById('show-cart').addEventListener('click', () => showSection('cart'));
+
+        let cart = [];
+
+        function updateCart() {
+            const container = document.getElementById('cart-container');
+            container.innerHTML = '';
+            let total = 0;
+            cart.forEach(item => {
+                total += item.preco * item.qtd;
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                <h4>${item.nome}</h4>
+                <p>R$ ${item.preco.toFixed(2)} x ${item.qtd}</p>
+                <button onclick="removeFromCart(${item.id})">Remover</button>
+            `;
+                container.appendChild(div);
+            });
+            document.getElementById('cart-total').textContent = total.toFixed(2);
+            document.getElementById('cart-count').textContent = cart.reduce((acc,i)=>acc+i.qtd,0);
+        }
+
+        window.addToCart = function(id, nome, preco) {
+            const cartItem = cart.find(c => c.id === id);
+            if(cartItem) cartItem.qtd++;
+            else cart.push({id, nome, preco, qtd:1});
+            updateCart();
+        }
+
+        window.removeFromCart = function(id){
+            cart = cart.filter(c => c.id !== id);
+            updateCart();
+        }
+
+        // Cadastro
+        document.getElementById('register-btn').addEventListener('click', () => {
+            const nome = document.getElementById('register-name').value;
+            const cpf = document.getElementById('register-cpf').value;
+            const dataNasc = document.getElementById('register-data').value;
+            const email = document.getElementById('register-email').value;
+            const senha = document.getElementById('register-password').value;
+
+            fetch('http://localhost:8080/usuarios', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({nome,email,senha,cpf,dataNasc})
+            })
+                .then(res => res.json())
+                .then(() => {
+                    document.getElementById('register-msg').textContent = 'Cadastro realizado!';
+                    showSection('login');
+                })
+                .catch(err => {
+                    document.getElementById('register-msg').textContent = 'Erro no cadastro!';
+                    console.error(err);
+                });
+        });
+
+        // Login
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const email = document.getElementById('login-email').value;
+            const senha = document.getElementById('login-password').value;
+
+            fetch('http://localhost:8080/usuarios/login',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({email,senha})
+            })
+                .then(res => res.json())
+                .then(user => {
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    document.getElementById('login-msg').textContent = 'Login realizado!';
+                    showSection('products');
+                    loadProducts();
+                })
+                .catch(err => {
+                    document.getElementById('login-msg').textContent = 'Email ou senha incorretos!';
+                    console.error(err);
+                });
+        });
+
+        // Produtos
+        const productsContainer = document.getElementById('products-container');
+
+        function loadProducts(){
+            fetch('http://localhost:8080/produtos')
+                .then(res => res.json())
+                .then(produtos => {
+                    productsContainer.innerHTML = '';
+                    produtos.forEach(p => {
+                        const card = document.createElement('div');
+                        card.className = 'product-card';
+                        card.innerHTML = `
+                    <img src="${p.img}" alt="${p.nome}" style="width:100px;height:100px;">
+                    <h3>${p.nome}</h3>
+                    <p>R$ ${p.preco.toFixed(2)}</p>
+                    <button onclick="addToCart(${p.id}, '${p.nome}', ${p.preco})">Adicionar</button>
+                `;
+                        productsContainer.appendChild(card);
+                    });
+                })
+                .catch(err => console.error(err));
+        }
+
+        // Checkout WhatsApp
+        document.getElementById('checkout-btn').addEventListener('click', () => {
+            if(cart.length===0){ alert('Carrinho vazio!'); return; }
+            let message = 'Olá, quero comprar:%0A';
+            cart.forEach(item => message += `${item.nome} x${item.qtd} - R$ ${(item.preco*item.qtd).toFixed(2)}%0A`);
+            message += `Total: R$ ${cart.reduce((acc,i)=>acc+i.preco*i.qtd,0).toFixed(2)}`;
+            const phone = '5511999999999'; // seu número
+            window.open(`https://wa.me/${phone}?text=${message}`,'_blank');
+        });
+
+    });
+</script>
+</body>
+</html>

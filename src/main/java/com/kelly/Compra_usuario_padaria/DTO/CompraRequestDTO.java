@@ -5,6 +5,6 @@ import lombok.Data;
 import java.util.List;
 @Data
 public class CompraRequestDTO {
-    private Integer UsuarioId;
-    private List<Long> ProdutoIds;
+    private Integer usuarioId;
+    private List<Long> produtoIds;
 }

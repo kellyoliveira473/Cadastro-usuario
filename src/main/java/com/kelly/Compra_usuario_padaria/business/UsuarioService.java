@@ -14,35 +14,38 @@ public class UsuarioService {
         this.repository = repository;
     }
 
-    public void SalvarUsuarioPorId(Usuario usuario) {
-        repository.save(usuario);
+    // Salva e retorna o usuário salvo
+    public Usuario salvarUsuario(Usuario usuario) {
+        return repository.save(usuario);
     }
 
-    public Usuario BuscarUsuarioPorId(Integer id) {
+    public Usuario buscarUsuarioPorId(Integer id) {
        return repository.findById(id).orElseThrow(
-               ()-> new RuntimeException("Id não encontrado em nosso banco de dados")
+               () -> new RuntimeException("Id não encontrado em nosso banco de dados")
        );
     }
 
-    public void DeleteUsuarioPorId(Integer id) {
+    public void deleteUsuarioPorId(Integer id) {
         repository.deleteById(id);
     }
 
-    public Usuario AtualizarUsuarioPorId(Integer id, Usuario usuario) {
+    public Usuario atualizarUsuarioPorId(Integer id, Usuario usuario) {
         Usuario usuarioEntities = repository.findById(id).orElseThrow(
-                () -> new RuntimeException("Usuario nao encontrado ")
+                () -> new RuntimeException("Usuario nao encontrado")
         );
         Usuario usuarioAtual = Usuario.builder()
+                .id(id) // importante: manter o id vindo do path
                 .nome(usuario.getNome() != null ? usuario.getNome() : usuarioEntities.getNome())
                 .email(usuario.getEmail() != null ? usuario.getEmail() : usuarioEntities.getEmail())
-                .id(usuario.getId())
                 .build();
         return repository.save(usuarioAtual);
     }
-    public List<Usuario> listarTodos(){
+
+    public List<Usuario> listarTodos() {
         return repository.findAll();
     }
 }
+
 
 
 
